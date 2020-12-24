@@ -14,7 +14,18 @@ const Autocomplete = () => {
   const [suggestions, setSuggestions] = useState([]);
   const [highlightedSuggestion, setHighlightedSuggestion] = useState(0);
   const inputRef = useRef();
-  const debouncedFunction = useCallback(debounce(getSuggestionsForWord, 400));
+
+  const getSuggestionsForWord = async (text) => {
+    try {
+      const suggestions = await getSuggestions(text);
+      setSuggestions(suggestions);
+      setHighlightedSuggestion(0);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const debouncedFunction = useCallback(debounce(getSuggestionsForWord, 1000), []);
 
   const onInput = (event) => {
     const lastText = text.split(" ").slice(-1)[0];
@@ -32,8 +43,6 @@ const Autocomplete = () => {
 
   const handleSelection = (suggestion) => {
     const previousText = text.split(" ").slice(0, -1).join(" ");
-
-    console.log(previousText);
     if (previousText.length > 1) {
       setText(`${previousText} ${suggestion} `);
     } else {
@@ -56,29 +65,22 @@ const Autocomplete = () => {
     const keyPressed = e.which;
 
     if (keyPressed === KEYBOARD_KEYS.UP_ARROW) {
+      e.preventDefault()
       setHighlightedSuggestion(
         highlightedSuggestion === 0
           ? suggestions.length - 1
           : highlightedSuggestion - 1
       );
     } else if (keyPressed === KEYBOARD_KEYS.DOWN_ARROW) {
+      e.preventDefault()
       setHighlightedSuggestion(
         highlightedSuggestion === suggestions.length - 1
           ? 0
           : highlightedSuggestion + 1
       );
     } else if (keyPressed === KEYBOARD_KEYS.ENTER) {
+      e.preventDefault()
       handleSelection(suggestions[highlightedSuggestion]);
-    }
-  };
-
-  const getSuggestionsForWord = async (text) => {
-    try {
-      const suggestions = await getSuggestions(text);
-      setSuggestions(suggestions);
-      setHighlightedSuggestion(0);
-    } catch (error) {
-      console.error(error);
     }
   };
 
@@ -89,8 +91,8 @@ const Autocomplete = () => {
         ref={inputRef}
         value={text}
         autoFocus
-        onChange={(e) => onInput(e)}
-        onKeyDown={(e) => onKeyPressed(e)}
+        onChange={onInput}
+        onKeyDown={onKeyPressed}
         className="form-control"
       />
       <DropDown
